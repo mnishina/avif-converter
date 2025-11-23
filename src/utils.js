@@ -51,8 +51,20 @@ export async function ensureDirectory(dirPath, createIfMissing = true) {
  */
 export async function cleanDirectory(dirPath) {
     try {
-        await fs.rm(dirPath, { recursive: true, force: true });
-        await fs.mkdir(dirPath, { recursive: true });
+        // ディレクトリが存在しない場合は何もしない（後続のensureDirectoryで作成される）
+        try {
+            await fs.access(dirPath);
+        } catch {
+            return;
+        }
+
+        const files = await fs.readdir(dirPath);
+        for (const file of files) {
+            if (file === '.gitkeep') continue;
+            
+            const curPath = path.join(dirPath, file);
+            await fs.rm(curPath, { recursive: true, force: true });
+        }
     } catch (error) {
         throw new Error(`Failed to clean directory: ${dirPath}. ${error.message}`);
     }
